@@ -1,7 +1,8 @@
 import EventMapper from '../Mappers/event_mapper.jsx';
+import getDatabasePool from '../Database/connection.jsx';
 
 export class EventRepository {
-  constructor(db) {
+  constructor(db = getDatabasePool()) {
     this.db = db;
   }
 
