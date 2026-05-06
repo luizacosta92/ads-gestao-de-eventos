@@ -1,0 +1,6 @@
+{
+  "/casamentos/page": "app/casamentos/page.js",
+  "/casamentos/novo/page": "app/casamentos/novo/page.js",
+  "/casamentos/[id]/page": "app/casamentos/[id]/page.js",
+  "/casamentos/[id]/editar/page": "app/casamentos/[id]/editar/page.js"
+}
