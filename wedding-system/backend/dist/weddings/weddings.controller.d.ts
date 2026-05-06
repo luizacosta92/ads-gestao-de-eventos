@@ -1,0 +1,100 @@
+import { WeddingsService } from './weddings.service';
+import { CreateWeddingDto } from './dto/create-wedding.dto';
+import { UpdateWeddingDto } from './dto/update-wedding.dto';
+export declare class WeddingsController {
+    private readonly weddingsService;
+    constructor(weddingsService: WeddingsService);
+    create(dto: CreateWeddingDto): Promise<{
+        bride_name: string;
+        groom_name: string;
+        couple_email: string;
+        couple_phone: string;
+        wedding_date: Date;
+        venue: string;
+        city: string;
+        state: string;
+        estimated_guests: number;
+        total_budget: import("@prisma/client/runtime/library").Decimal;
+        status: import(".prisma/client").$Enums.WeddingStatus;
+        notes: string | null;
+        created_at: Date;
+        updated_at: Date;
+        id: number;
+    }>;
+    findAll(page?: string, limit?: string, search?: string): Promise<{
+        data: {
+            bride_name: string;
+            groom_name: string;
+            couple_email: string;
+            couple_phone: string;
+            wedding_date: Date;
+            venue: string;
+            city: string;
+            state: string;
+            estimated_guests: number;
+            total_budget: import("@prisma/client/runtime/library").Decimal;
+            status: import(".prisma/client").$Enums.WeddingStatus;
+            notes: string | null;
+            created_at: Date;
+            updated_at: Date;
+            id: number;
+        }[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            lastPage: number;
+        };
+    }>;
+    findOne(id: number): Promise<{
+        bride_name: string;
+        groom_name: string;
+        couple_email: string;
+        couple_phone: string;
+        wedding_date: Date;
+        venue: string;
+        city: string;
+        state: string;
+        estimated_guests: number;
+        total_budget: import("@prisma/client/runtime/library").Decimal;
+        status: import(".prisma/client").$Enums.WeddingStatus;
+        notes: string | null;
+        created_at: Date;
+        updated_at: Date;
+        id: number;
+    }>;
+    update(id: number, dto: UpdateWeddingDto): Promise<{
+        bride_name: string;
+        groom_name: string;
+        couple_email: string;
+        couple_phone: string;
+        wedding_date: Date;
+        venue: string;
+        city: string;
+        state: string;
+        estimated_guests: number;
+        total_budget: import("@prisma/client/runtime/library").Decimal;
+        status: import(".prisma/client").$Enums.WeddingStatus;
+        notes: string | null;
+        created_at: Date;
+        updated_at: Date;
+        id: number;
+    }>;
+    remove(id: number): Promise<{
+        bride_name: string;
+        groom_name: string;
+        couple_email: string;
+        couple_phone: string;
+        wedding_date: Date;
+        venue: string;
+        city: string;
+        state: string;
+        estimated_guests: number;
+        total_budget: import("@prisma/client/runtime/library").Decimal;
+        status: import(".prisma/client").$Enums.WeddingStatus;
+        notes: string | null;
+        created_at: Date;
+        updated_at: Date;
+        id: number;
+    }>;
+}
