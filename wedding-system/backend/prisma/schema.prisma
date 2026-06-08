@@ -1,0 +1,80 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WeddingStatus {
+  PLANNING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Wedding {
+  id              Int           @id @default(autoincrement())
+
+  // Casal (obrigatórios — 1ª tela do wizard)
+  bride_name      String        @db.VarChar(150)
+  groom_name      String        @db.VarChar(150)
+  couple_email    String        @db.VarChar(150)
+  couple_phone    String        @db.VarChar(20)
+
+  // Evento (opcionais — 2ª tela do wizard, podem ser preenchidos depois)
+  wedding_date    DateTime?     @db.Date
+  venue           String?       @db.VarChar(300)
+  buffet_vendor   String?       @db.VarChar(200)
+  photography_vendor String?    @db.VarChar(200)
+  video_vendor    String?       @db.VarChar(200)
+  decoracao_vendor String?      @db.VarChar(200)
+  musica_vendor   String?       @db.VarChar(200)
+  bolo_vendor     String?       @db.VarChar(200)
+  bebidas_vendor  String?       @db.VarChar(200)
+  convites_vendor String?       @db.VarChar(200)
+  lembrancinhas_vendor String?  @db.VarChar(200)
+  beleza_vendor   String?       @db.VarChar(200)
+  celebrante_vendor String?     @db.VarChar(200)
+  transporte_vendor String?     @db.VarChar(200)
+  city            String?       @db.VarChar(100)
+  state           String?       @db.VarChar(2)
+  estimated_guests Int          @default(0)
+
+  // Financeiro (opcional)
+  total_budget    Decimal?      @db.Decimal(12, 2)
+
+  // Controle
+  status          WeddingStatus @default(PLANNING)
+  notes           String?       @db.Text
+
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  @@map("weddings")
+}
+
+model Vendor {
+  id                Int       @id @default(autoincrement())
+  name              String    @db.VarChar(200)
+  service_category  String    @db.VarChar(100)
+  tax_id            String?   @db.VarChar(18)  // CNPJ/CPF
+  whatsapp          String?   @db.VarChar(20)
+  phone             String?   @db.VarChar(20)
+  email             String?   @db.VarChar(150)
+  address           String?   @db.VarChar(300)
+  city              String?   @db.VarChar(100)
+  state             String?   @db.VarChar(2)
+  social_links      String?   @db.Text
+  website           String?   @db.VarChar(200)
+  portfolio_urls    String?   @db.Text
+  notes             String?   @db.Text
+  is_active         Boolean   @default(true)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@map("vendors")
+}
