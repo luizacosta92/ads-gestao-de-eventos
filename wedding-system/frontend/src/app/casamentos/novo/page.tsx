@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { WeddingForm } from '@/components/weddings/wedding-form';
 import { useCreateWedding } from '@/hooks/use-weddings';
 import { WeddingSchema } from '@/lib/schemas/wedding.schema';
-import { Button } from '@/components/ui/button';
-import { ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export default function NewWeddingPage() {
   const router = useRouter();
@@ -19,22 +18,24 @@ export default function NewWeddingPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-3xl">
-      <div className="mb-6">
-        <Link href="/casamentos">
-          <Button variant="ghost" className="gap-2 text-gray-600 pl-0">
-            <ArrowLeftIcon className="w-4 h-4" />
-            Voltar
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900 mt-2">Novo Casamento</h1>
-        <p className="text-gray-500 mt-1">
-          Preencha em duas etapas: dados do casal (obrigatórios) e infos sobre o evento (opcionais).
-        </p>
+    <div className="screen enter">
+      <Link href="/casamentos" className="btn btn-ghost" style={{ paddingLeft: 6, marginBottom: 14 }}>
+        <ArrowLeft size={16} /> Cancelar
+      </Link>
+
+      <div style={{ textAlign: 'center', marginBottom: 26 }}>
+        <div className="eyebrow" style={{ textAlign: 'center' }}>
+          Novo projeto
+        </div>
+        <h1 className="page-title" style={{ fontSize: 40 }}>
+          Cadastrar casamento
+        </h1>
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm p-6">
-        <WeddingForm onSubmit={handleSubmit} isLoading={isPending} />
+      <div className="form-card">
+        <div className="card" style={{ padding: 28 }}>
+          <WeddingForm onSubmit={handleSubmit} isLoading={isPending} />
+        </div>
       </div>
     </div>
   );

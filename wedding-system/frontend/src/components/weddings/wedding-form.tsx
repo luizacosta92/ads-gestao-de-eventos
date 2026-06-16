@@ -14,12 +14,11 @@ import {
   WeddingSchema,
 } from '@/lib/schemas/wedding.schema';
 import { Wedding } from '@/types/wedding';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from '@/components/ui/form';
-import { ArrowLeftIcon, ArrowRightIcon, HeartIcon, CalendarDaysIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, HeartIcon } from 'lucide-react';
 import { WeddingEventDetailsFields } from '@/components/weddings/wedding-event-details-fields';
 import { WeddingVendorFields } from '@/components/weddings/wedding-vendor-fields';
 
@@ -104,11 +103,12 @@ export function WeddingForm({ defaultValues, onSubmit, isLoading, isEditing }: W
             onSubmit={(e) => { e.preventDefault(); goToStep2(); }}
             className="space-y-6"
           >
-            <div className="border-l-4 border-rose-500 bg-rose-50/50 px-4 py-3 rounded">
-              <p className="text-sm text-rose-900">
+            <div className="form-note">
+              <HeartIcon className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
                 <strong>Etapa 1 de 2 — Dados do casal.</strong>{' '}
                 Todos os campos abaixo são obrigatórios.
-              </p>
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -153,11 +153,12 @@ export function WeddingForm({ defaultValues, onSubmit, isLoading, isEditing }: W
               )} />
             </div>
 
-            <div className="flex justify-end pt-2">
-              <Button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white gap-2">
+            <div className="form-foot">
+              <span />
+              <button type="submit" className="btn btn-primary">
                 Próximo: Infos do Evento
                 <ArrowRightIcon className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
           </form>
         </Form>
@@ -173,23 +174,14 @@ export function WeddingForm({ defaultValues, onSubmit, isLoading, isEditing }: W
             <WeddingEventDetailsFields control={eventForm.control} />
             <WeddingVendorFields control={eventForm.control} />
 
-            <div className="flex justify-between gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep(1)}
-                className="gap-2"
-              >
+            <div className="form-foot">
+              <button type="button" className="btn btn-outline" onClick={() => setStep(1)}>
                 <ArrowLeftIcon className="w-4 h-4" />
                 Voltar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-rose-600 hover:bg-rose-700 text-white"
-              >
+              </button>
+              <button type="submit" disabled={isLoading} className="btn btn-primary">
                 {isLoading ? 'Salvando...' : isEditing ? 'Atualizar Casamento' : 'Salvar Casamento'}
-              </Button>
+              </button>
             </div>
           </form>
         </Form>
@@ -203,29 +195,14 @@ export function WeddingForm({ defaultValues, onSubmit, isLoading, isEditing }: W
 // =====================================================================
 function Stepper({ currentStep }: { currentStep: Step }) {
   return (
-    <div className="flex items-center justify-center gap-3 pb-2">
-      <StepBadge n={1} label="Casal" icon={HeartIcon} active={currentStep === 1} done={currentStep > 1} />
-      <div className={`h-0.5 w-12 ${currentStep > 1 ? 'bg-rose-500' : 'bg-gray-200'}`} />
-      <StepBadge n={2} label="Evento" icon={CalendarDaysIcon} active={currentStep === 2} done={false} />
-    </div>
-  );
-}
-
-function StepBadge({
-  n, label, icon: Icon, active, done,
-}: {
-  n: number; label: string; icon: any; active: boolean; done: boolean;
-}) {
-  const base = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors';
-  const cls = done
-    ? 'bg-rose-500 text-white border-rose-500'
-    : active
-      ? 'bg-rose-50 text-rose-700 border-rose-300'
-      : 'bg-gray-50 text-gray-500 border-gray-200';
-  return (
-    <div className={`${base} ${cls}`}>
-      <Icon className="w-4 h-4" />
-      <span>{n}. {label}</span>
+    <div className="stepper">
+      <div className={'step-badge ' + (currentStep === 1 ? 'active' : currentStep > 1 ? 'done' : '')}>
+        <span className="n">{currentStep > 1 ? '✓' : 1}</span> Casal
+      </div>
+      <div className="step-line" style={{ ['--p' as any]: currentStep > 1 ? '100%' : '0%' }} />
+      <div className={'step-badge ' + (currentStep === 2 ? 'active' : '')}>
+        <span className="n">2</span> Evento
+      </div>
     </div>
   );
 }
