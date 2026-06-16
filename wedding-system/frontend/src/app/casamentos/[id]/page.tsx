@@ -1,36 +1,35 @@
 'use client';
-// src/app/casamentos/[id]/page.tsx
+// src/app/casamentos/[id]/page.tsx — detalhe do casamento (design Enlace)
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useWedding, useDeleteWedding } from '@/hooks/use-weddings';
-import { WEDDING_STATUS_LABELS, WEDDING_STATUS_COLORS } from '@/types/wedding';
-import { Button } from '@/components/ui/button';
+import { Wedding } from '@/types/wedding';
+import { WEDDING_VENDOR_FIELD_CONFIG, VENDOR_CATEGORY_LABELS } from '@/lib/api/vendors';
+import { StatusPill, fmtShort, fmtMoney, daysUntil, catColor } from '@/lib/enlace';
 import {
-  ArrowLeftIcon, PencilIcon, TrashIcon,
-  CalendarIcon, MapPinIcon, UsersIcon, WalletIcon, PhoneIcon, MailIcon,
+  ArrowLeft, Pencil, Trash2, Calendar, MapPin, Users, Wallet, Mail, Phone, Store, ArrowRight,
 } from 'lucide-react';
-import { useState } from 'react';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 function InfoCard({
   icon: Icon, label, value,
-}: { icon: any; label: string; value: string | null | undefined }) {
-  const display = value && value !== '' ? value : 'Não informado';
-  const isEmpty = !value || value === '';
+}: {
+  icon: any;
+  label: string;
+  value: string | null | undefined;
+}) {
+  const empty = !value;
   return (
-    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-      <Icon className="w-5 h-5 text-rose-500 mt-0.5 shrink-0" />
+    <div className="info-card">
+      <div className="info-ico">
+        <Icon size={18} />
+      </div>
       <div>
-        <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-        <p className={`font-medium mt-0.5 ${isEmpty ? 'text-gray-400 italic' : 'text-gray-900'}`}>
-          {display}
-        </p>
+        <div className="info-label">{label}</div>
+        <div className={'info-value' + (empty ? ' empty' : '')}>{value || 'Não informado'}</div>
       </div>
     </div>
   );
@@ -50,100 +49,167 @@ export default function WeddingDetailPage() {
     router.push('/casamentos');
   };
 
-  if (isLoading) return <div className="container mx-auto py-8 px-4 text-gray-400">Carregando...</div>;
-  if (!wedding) return <div className="container mx-auto py-8 px-4 text-red-500">Casamento não encontrado.</div>;
+  if (isLoading) return <div className="screen">Carregando…</div>;
+  if (!wedding) return <div className="screen" style={{ color: '#a44a3a' }}>Casamento não encontrado.</div>;
 
-  // formatadores defensivos — todos os campos do "evento" podem ser null
-  const dateValue = wedding.wedding_date
-    ? format(new Date(wedding.wedding_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+  const w: Wedding = wedding;
+  const days = daysUntil(w.wedding_date);
+  const loc =
+    [w.venue, [w.city, w.state].filter(Boolean).join('/')].filter(Boolean).join(' · ') || null;
+
+  const dateLong = w.wedding_date
+    ? format(new Date(w.wedding_date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })
     : null;
 
-  const locationValue = wedding.venue || (wedding.city || wedding.state)
-    ? [wedding.venue, [wedding.city, wedding.state].filter(Boolean).join('/')]
-        .filter((s) => s && s !== '')
-        .join(' — ')
-    : null;
-
-  const guestsValue = wedding.estimated_guests > 0
-    ? `${wedding.estimated_guests} pessoas`
-    : null;
-
-  const budgetValue = wedding.total_budget != null
-    ? Number(wedding.total_budget).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    : null;
+  // fornecedores vinculados (campos planos preenchidos)
+  const linkedVendors = WEDDING_VENDOR_FIELD_CONFIG
+    .map((cfg) => ({ cfg, value: (w as any)[cfg.name] as string | null | undefined }))
+    .filter((x) => x.value && x.value !== '');
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-3xl">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <Link href="/casamentos">
-            <Button variant="ghost" className="gap-2 text-gray-600 pl-0 mb-2">
-              <ArrowLeftIcon className="w-4 h-4" /> Voltar
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {wedding.bride_name} & {wedding.groom_name}
-          </h1>
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${WEDDING_STATUS_COLORS[wedding.status]}`}>
-            {WEDDING_STATUS_LABELS[wedding.status]}
+    <div className="screen enter" style={{ maxWidth: 940 }}>
+      <Link href="/casamentos" className="btn btn-ghost" style={{ paddingLeft: 6, marginBottom: 14 }}>
+        <ArrowLeft size={16} /> Voltar para casamentos
+      </Link>
+
+      <div className="detail-hero">
+        {days != null && days >= 0 && w.status !== 'CANCELLED' && (
+          <div className="countdown">
+            <div className="cd-num">{days === 0 ? '🎉' : days}</div>
+            <div className="cd-label">{days === 0 ? 'é hoje' : days === 1 ? 'dia restante' : 'dias restantes'}</div>
+          </div>
+        )}
+        <StatusPill status={w.status} />
+        <div className="hero-couple" style={{ marginTop: 14 }}>
+          {w.bride_name} <span style={{ opacity: 0.6, fontStyle: 'italic' }}>&amp;</span> {w.groom_name}
+        </div>
+        <div className="hero-meta">
+          <span>
+            <Calendar size={16} />
+            {fmtShort(w.wedding_date)}
           </span>
+          {loc && (
+            <span>
+              <MapPin size={16} />
+              {w.venue || w.city}
+            </span>
+          )}
+          {w.estimated_guests > 0 && (
+            <span>
+              <Users size={16} />
+              {w.estimated_guests} convidados
+            </span>
+          )}
+          {linkedVendors.length > 0 && (
+            <span>
+              <Store size={16} />
+              {linkedVendors.length} fornecedores
+            </span>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Link href={`/casamentos/${id}/editar`}>
-            <Button variant="outline" className="gap-2">
-              <PencilIcon className="w-4 h-4" /> Editar
-            </Button>
-          </Link>
-          <Button variant="outline" className="gap-2 text-red-600 border-red-200 hover:bg-red-50" onClick={() => setShowDelete(true)}>
-            <TrashIcon className="w-4 h-4" /> Excluir
-          </Button>
-        </div>
       </div>
 
-      {/* Casal — sempre presente */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Dados do Casal</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <InfoCard icon={MailIcon} label="E-mail do Casal" value={wedding.couple_email} />
-        <InfoCard icon={PhoneIcon} label="Telefone / WhatsApp" value={wedding.couple_phone} />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 24 }}>
+        <Link href={`/casamentos/${id}/editar`} className="btn btn-outline">
+          <Pencil size={15} />
+          Editar
+        </Link>
+        <button className="btn btn-danger" onClick={() => setShowDelete(true)}>
+          <Trash2 size={15} />
+          Excluir
+        </button>
       </div>
 
-      {/* Evento — campos opcionais */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Infos do Evento</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <InfoCard icon={CalendarIcon} label="Data do Casamento" value={dateValue} />
-        <InfoCard icon={MapPinIcon} label="Local" value={locationValue} />
-        <InfoCard icon={UsersIcon} label="Convidados Estimados" value={guestsValue} />
-        <InfoCard icon={WalletIcon} label="Orçamento Total" value={budgetValue} />
+      <div className="label-up" style={{ marginBottom: 12 }}>
+        Dados do casal
+      </div>
+      <div className="info-grid" style={{ marginBottom: 26 }}>
+        <InfoCard icon={Mail} label="E-mail do casal" value={w.couple_email} />
+        <InfoCard icon={Phone} label="Telefone / WhatsApp" value={w.couple_phone} />
       </div>
 
-      {/* Observações */}
-      {wedding.notes && (
-        <div className="bg-white border rounded-lg p-5">
-          <h2 className="font-semibold text-gray-700 mb-2">Observações</h2>
-          <p className="text-gray-600 whitespace-pre-wrap">{wedding.notes}</p>
+      <div className="label-up" style={{ marginBottom: 12 }}>
+        Informações do evento
+      </div>
+      <div className="info-grid" style={{ marginBottom: 26 }}>
+        <InfoCard icon={Calendar} label="Data do casamento" value={dateLong} />
+        <InfoCard icon={MapPin} label="Local" value={loc} />
+        <InfoCard
+          icon={Users}
+          label="Convidados"
+          value={w.estimated_guests > 0 ? `${w.estimated_guests} pessoas` : null}
+        />
+        <InfoCard icon={Wallet} label="Orçamento total" value={fmtMoney(w.total_budget)} />
+      </div>
+
+      {/* Fornecedores do evento */}
+      <div className="sec-head" style={{ margin: '0 0 12px' }}>
+        <span className="label-up">Fornecedores do evento</span>
+        <Link href="/fornecedores" className="sec-link">
+          Ver catálogo <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      <div className="card" style={{ overflow: 'hidden', padding: 0, marginBottom: 26 }}>
+        {linkedVendors.length === 0 ? (
+          <div className="empty" style={{ padding: '40px 20px' }}>
+            <Store size={34} />
+            <div>Nenhum fornecedor vinculado a este casamento ainda.</div>
+          </div>
+        ) : (
+          linkedVendors.map(({ cfg, value }) => {
+            const c = catColor(cfg.category);
+            return (
+              <div className="lk-row" key={cfg.name}>
+                <div className="lk-logo" style={{ background: `linear-gradient(135deg, ${c}, ${c}cc)` }}>
+                  {(value as string).charAt(0)}
+                </div>
+                <div>
+                  <div className="lk-name">{value}</div>
+                  <div className="lk-cat">
+                    <span className="dot" style={{ background: c }} />
+                    {VENDOR_CATEGORY_LABELS[cfg.category] ?? cfg.label}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {w.notes && (
+        <div className="card" style={{ padding: 22 }}>
+          <div className="label-up" style={{ marginBottom: 10 }}>
+            Observações
+          </div>
+          <p style={{ margin: 0, color: 'var(--ink-soft)', lineHeight: 1.6, fontSize: 15, whiteSpace: 'pre-wrap' }}>
+            {w.notes}
+          </p>
         </div>
       )}
 
-      {/* Delete dialog */}
-      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
+      {showDelete && (
+        <div className="modal-back" onClick={() => setShowDelete(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar exclusão</h3>
+            <p>
               Tem certeza que deseja excluir o casamento de{' '}
-              <strong>{wedding.bride_name} & {wedding.groom_name}</strong>?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDelete}>
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <strong>
+                {w.bride_name} &amp; {w.groom_name}
+              </strong>
+              ? Esta ação não pode ser desfeita.
+            </p>
+            <div className="modal-foot">
+              <button className="btn btn-outline" onClick={() => setShowDelete(false)}>
+                Cancelar
+              </button>
+              <button className="btn" style={{ background: '#a44a3a', color: '#fff' }} onClick={handleDelete}>
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

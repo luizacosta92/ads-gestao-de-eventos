@@ -19,11 +19,11 @@ interface WeddingEventDetailsFieldsProps {
 export function WeddingEventDetailsFields({ control }: WeddingEventDetailsFieldsProps) {
   return (
     <div className="space-y-6">
-      <div className="border-l-4 border-amber-500 bg-amber-50/50 px-4 py-3 rounded">
-        <p className="text-sm text-amber-900">
+      <div className="form-note opt">
+        <span>
           <strong>Etapa 2 de 2 — Infos sobre o evento.</strong>{' '}
           Os campos abaixo são <strong>opcionais</strong> — você pode preenchê-los agora ou depois.
-        </p>
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

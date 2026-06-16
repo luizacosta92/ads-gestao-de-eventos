@@ -1,33 +1,29 @@
 'use client';
-// src/app/casamentos/page.tsx
+// src/app/casamentos/page.tsx — lista de casamentos (design Enlace)
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 import { useWeddings, useDeleteWedding } from '@/hooks/use-weddings';
-import { WEDDING_STATUS_LABELS, WEDDING_STATUS_COLORS, Wedding } from '@/types/wedding';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { PlusIcon, SearchIcon, PencilIcon, TrashIcon, EyeIcon } from 'lucide-react';
+  WEDDING_STATUS_LABELS, WeddingStatus, Wedding,
+} from '@/types/wedding';
+import { StatusPill, CoupleAv, fmtShort, fmtMoney, STATUS_DOT } from '@/lib/enlace';
+import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
 
-/** Renderiza "—" para qualquer valor null/undefined/string-vazia */
-const dash = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : String(v));
+const STATUS_ORDER: WeddingStatus[] = ['PLANNING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
 export default function WeddingsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
+  const [statusF, setStatusF] = useState<WeddingStatus | ''>('');
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Wedding | null>(null);
 
   const { data, isLoading } = useWeddings(page, 10, search || undefined);
   const deleteMutation = useDeleteWedding();
+
+  const rows = (data?.data ?? []).filter((w) => !statusF || w.status === statusF);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -36,162 +32,192 @@ export default function WeddingsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="screen enter">
+      <div className="topbar">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Casamentos</h1>
-          <p className="text-gray-500 mt-1">Gerencie todos os seus projetos de casamento</p>
+          <div className="eyebrow">Projetos</div>
+          <h1 className="page-title">Casamentos</h1>
+          <p className="page-sub">Gerencie cada celebração — do primeiro contato ao grande dia.</p>
         </div>
-        <Link href="/casamentos/novo">
-          <Button className="bg-rose-600 hover:bg-rose-700 text-white gap-2">
-            <PlusIcon className="w-4 h-4" />
-            Novo Casamento
-          </Button>
+        <Link href="/casamentos/novo" className="btn btn-primary">
+          <Plus size={16} />
+          Novo casamento
         </Link>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6 max-w-sm">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          placeholder="Buscar por nome, local, cidade..."
-          className="pl-9"
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1); }}
-        />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16,
+          marginBottom: 18,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div className="chips">
+          <button className={'chip' + (!statusF ? ' active' : '')} onClick={() => setStatusF('')}>
+            Todos
+          </button>
+          {STATUS_ORDER.map((s) => (
+            <button
+              key={s}
+              className={'chip' + (statusF === s ? ' active' : '')}
+              onClick={() => setStatusF(statusF === s ? '' : s)}
+            >
+              <span className="dot" style={{ background: STATUS_DOT[s] }} />
+              {WEDDING_STATUS_LABELS[s]}
+            </button>
+          ))}
+        </div>
+        <div className="search">
+          <Search />
+          <input
+            placeholder="Buscar casal, local, cidade…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
       </div>
 
-      {/* Tabela */}
-      <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead>Casal</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Local</TableHead>
-              <TableHead className="text-center">Convidados</TableHead>
-              <TableHead>Orçamento</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Casal</th>
+              <th>Data</th>
+              <th>Local</th>
+              <th className="t-center">Convidados</th>
+              <th>Orçamento</th>
+              <th>Status</th>
+              <th className="t-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="stagger">
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-gray-400">
-                  Carregando...
-                </TableCell>
-              </TableRow>
-            ) : !data?.data?.length ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-gray-400">
-                  Nenhum casamento encontrado.
-                </TableCell>
-              </TableRow>
+              <tr>
+                <td colSpan={7}>
+                  <div className="empty">Carregando…</div>
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7}>
+                  <div className="empty">
+                    <Search size={36} />
+                    <div>Nenhum casamento encontrado.</div>
+                  </div>
+                </td>
+              </tr>
             ) : (
-              data.data.map(w => (
-                <TableRow key={w.id} className="hover:bg-rose-50/30 transition-colors">
-                  <TableCell>
-                    <div className="font-medium text-gray-900">
-                      {w.bride_name} & {w.groom_name}
+              rows.map((w) => (
+                <tr key={w.id} onClick={() => router.push(`/casamentos/${w.id}`)}>
+                  <td>
+                    <div className="cell-couple">
+                      <CoupleAv a={w.bride_name} b={w.groom_name} />
+                      <div>
+                        <div className="cell-strong">
+                          {w.bride_name} &amp; {w.groom_name}
+                        </div>
+                        <div className="cell-sub">{w.couple_email}</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">{w.couple_email}</div>
-                  </TableCell>
-                  <TableCell>
-                    {w.wedding_date
-                      ? format(new Date(w.wedding_date), 'dd/MM/yyyy', { locale: ptBR })
-                      : <span className="text-gray-400">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    <div>{dash(w.venue)}</div>
-                    <div className="text-sm text-gray-500">
-                      {w.city || w.state
-                        ? `${dash(w.city)}/${dash(w.state)}`
-                        : ''}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {w.estimated_guests > 0 ? w.estimated_guests : <span className="text-gray-400">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    {w.total_budget != null
-                      ? Number(w.total_budget).toLocaleString('pt-BR', {
-                          style: 'currency', currency: 'BRL',
-                        })
-                      : <span className="text-gray-400">—</span>}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${WEDDING_STATUS_COLORS[w.status]}`}>
-                      {WEDDING_STATUS_LABELS[w.status]}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      <Link href={`/casamentos/${w.id}`}>
-                        <Button variant="ghost" size="icon" title="Ver detalhes">
-                          <EyeIcon className="w-4 h-4 text-gray-500" />
-                        </Button>
+                  </td>
+                  <td>
+                    <span className="num">{fmtShort(w.wedding_date)}</span>
+                  </td>
+                  <td>
+                    <div>{w.venue || <span style={{ color: 'var(--muted)' }}>—</span>}</div>
+                    {(w.city || w.state) && (
+                      <div className="cell-sub">
+                        {w.city}
+                        {w.state ? `/${w.state}` : ''}
+                      </div>
+                    )}
+                  </td>
+                  <td className="t-center num">
+                    {w.estimated_guests > 0 ? w.estimated_guests : <span style={{ color: 'var(--muted)' }}>—</span>}
+                  </td>
+                  <td className="num">{fmtMoney(w.total_budget) ?? <span style={{ color: 'var(--muted)' }}>—</span>}</td>
+                  <td>
+                    <StatusPill status={w.status} />
+                  </td>
+                  <td className="t-right">
+                    <div className="row-actions" onClick={(e) => e.stopPropagation()}>
+                      <Link href={`/casamentos/${w.id}`} className="btn-icon" title="Ver">
+                        <Eye size={17} />
                       </Link>
-                      <Link href={`/casamentos/${w.id}/editar`}>
-                        <Button variant="ghost" size="icon" title="Editar">
-                          <PencilIcon className="w-4 h-4 text-blue-500" />
-                        </Button>
+                      <Link href={`/casamentos/${w.id}/editar`} className="btn-icon" title="Editar">
+                        <Pencil size={16} />
                       </Link>
-                      <Button
-                        variant="ghost" size="icon" title="Excluir"
+                      <button
+                        className="btn-icon"
+                        title="Excluir"
+                        style={{ color: '#a44a3a' }}
                         onClick={() => setDeleteTarget(w)}
                       >
-                        <TrashIcon className="w-4 h-4 text-red-500" />
-                      </Button>
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))
             )}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
 
-      {/* Paginação */}
-      {data?.meta && data.meta.lastPage > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+      {data?.meta && (
+        <div className="pager">
           <span>
-            Mostrando {((page - 1) * 10) + 1}–{Math.min(page * 10, data.meta.total)} de {data.meta.total}
+            Mostrando {rows.length} de {data.meta.total} casamentos
           </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+          <div className="grp">
+            <button
+              className="btn btn-outline"
+              disabled={page === 1}
+              style={page === 1 ? { opacity: 0.5 } : undefined}
+              onClick={() => setPage((p) => p - 1)}
+            >
               Anterior
-            </Button>
-            <Button variant="outline" size="sm" disabled={page === data.meta.lastPage} onClick={() => setPage(p => p + 1)}>
+            </button>
+            <button
+              className="btn btn-outline"
+              disabled={page >= data.meta.lastPage}
+              style={page >= data.meta.lastPage ? { opacity: 0.5 } : undefined}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Próxima
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
-      {/* Dialog de confirmação de exclusão */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
+      {deleteTarget && (
+        <div className="modal-back" onClick={() => setDeleteTarget(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirmar exclusão</h3>
+            <p>
               Tem certeza que deseja excluir o casamento de{' '}
-              <strong>{deleteTarget?.bride_name} & {deleteTarget?.groom_name}</strong>?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={handleDelete}
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <strong>
+                {deleteTarget.bride_name} &amp; {deleteTarget.groom_name}
+              </strong>
+              ? Esta ação não pode ser desfeita.
+            </p>
+            <div className="modal-foot">
+              <button className="btn btn-outline" onClick={() => setDeleteTarget(null)}>
+                Cancelar
+              </button>
+              <button className="btn" style={{ background: '#a44a3a', color: '#fff' }} onClick={handleDelete}>
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
